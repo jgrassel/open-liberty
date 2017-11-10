@@ -9,24 +9,16 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 
-package com.ibm.ws.jpa;
+package com.ibm.ws.jpa.jpa21;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import com.ibm.ws.jpa.jpa10.JPA10FATSuite;
-import com.ibm.ws.jpa.jpa21.JPA21FATSuite;
-import com.ibm.ws.jpa.jpa22.JPA22FATSuite;
-
 @RunWith(Suite.class)
 @SuiteClasses({
-                JPABootstrapTest.class,
-                JPAAppClientTest.class,
-                JPA10FATSuite.class,
-                JPA21FATSuite.class,
-                JPA22FATSuite.class
+                TxSynchronizationTest.class
 })
-public class FATSuite {
+public class JPA21FATSuite {
 
 }
