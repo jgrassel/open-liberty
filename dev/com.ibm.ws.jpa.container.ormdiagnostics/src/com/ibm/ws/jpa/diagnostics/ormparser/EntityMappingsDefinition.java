@@ -11,8 +11,13 @@
 
 package com.ibm.ws.jpa.diagnostics.ormparser;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.net.URL;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 
 import com.ibm.ws.jpa.diagnostics.ormparser.entitymapping.IEntityMappings;
 
@@ -25,7 +30,7 @@ public class EntityMappingsDefinition {
         if (source == null || hash == null || entityMappings == null) {
             throw new NullPointerException("Constructor cannot accept any null arguments.");
         }
-        
+
         this.source = source;
         this.hash = hash;
         this.entityMappings = entityMappings;
@@ -34,7 +39,7 @@ public class EntityMappingsDefinition {
     public BigInteger getHash() {
         return hash;
     }
-    
+
     public URL getSource() {
         return source;
     }
@@ -42,7 +47,33 @@ public class EntityMappingsDefinition {
     public IEntityMappings getEntityMappings() {
         return entityMappings;
     }
-    
+
+    public String getEntityMappingsAsXML() {
+        try {
+            final JAXBContext jaxbCtx = JAXBContext.newInstance(entityMappings.getClass());
+            Marshaller m = jaxbCtx.createMarshaller();
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            m.marshal(entityMappings, baos);
+            return baos.toString();
+        } catch (JAXBException e) {
+            return "";
+        }
+    }
+
+    public byte[] getEntityMappingsAsXMLBytes() {
+        try {
+            final JAXBContext jaxbCtx = JAXBContext.newInstance(entityMappings.getClass());
+            Marshaller m = jaxbCtx.createMarshaller();
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            m.marshal(entityMappings, baos);
+            return baos.toByteArray();
+        } catch (JAXBException e) {
+            return new byte[0];
+        }
+    }
+
     public String getVersion() {
         return entityMappings.getVersion();
     }

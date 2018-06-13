@@ -148,7 +148,10 @@ class JPAPxmlInfo {
                              puInfo.getPersistenceUnitName() + "|" +
                              ivScopeInfo.getScopeType() + "|" + puInfo.dump());
 
-                JPAORMDiagnostics.generateJPAORMDiagnostics(puInfo);
+                try {
+                    JPAORMDiagnostics.generateJPAORMDiagnostics(puInfo, pxml.openStream());
+                } catch (Throwable t) {
+                }
             }
 
             if (getPuInfo(puName) != null) // d441029
