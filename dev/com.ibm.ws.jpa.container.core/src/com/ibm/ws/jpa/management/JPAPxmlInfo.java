@@ -22,6 +22,7 @@ import java.util.Set;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.ws.ffdc.FFDCFilter;
 import com.ibm.ws.jpa.JPAPuId;
 import com.ibm.ws.jpa.diagnostics.JPAORMDiagnostics;
 
@@ -151,6 +152,7 @@ class JPAPxmlInfo {
                 try {
                     JPAORMDiagnostics.generateJPAORMDiagnostics(puInfo, pxml.openStream());
                 } catch (Throwable t) {
+                    FFDCFilter.processException(t, JPAPxmlInfo.class.getName() + ".extractPersistenceUnits", "155");
                 }
             }
 

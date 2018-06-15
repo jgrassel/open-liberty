@@ -20,6 +20,7 @@ import javax.persistence.spi.PersistenceUnitInfo;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.ws.ffdc.FFDCFilter;
 import com.ibm.ws.jpa.diagnostics.class_scanner.ano.EntityMappingsScannerResults;
 import com.ibm.ws.jpa.diagnostics.ormparser.EntityMappingsDefinition;
 import com.ibm.ws.jpa.diagnostics.ormparser.entitymapping.IEntityMappings;
@@ -53,6 +54,8 @@ public class JPAORMDiagnostics {
             // Set Properties
             edg.setProperty("execution.environment", "WebSphere Liberty");
             edg.setProperty("Persistence Unit Name", puName);
+            edg.setProperty("Persistence Unit Root", pui.getPersistenceUnitRootUrl().toString());
+            edg.setProperty("Persistence Schema Version", pui.getPersistenceXMLSchemaVersion());
 
             List<URL> jpaFileURLList = pui.getJarFileUrls();
             int jarUrlCount = 0;
@@ -62,7 +65,7 @@ public class JPAORMDiagnostics {
                 }
             }
 
-            edg.putDataItem(EncapsulatedData.createEncapsulatedData("persistence.xml", Integer.toString(id++), readPXmlInputStream(pxmlIS)));
+            edg.putDataItem(EncapsulatedData.createEncapsulatedData("persistence.xml", Integer.toString(id++), readInputStream(pxmlIS)));
 
             EncapsulatedDataGroup edgClassScanner = EncapsulatedDataGroup.createEncapsulatedDataGroup("ClassScanner", "ClassScanner");
             edg.putDataSubGroup(edgClassScanner);
@@ -81,7 +84,7 @@ public class JPAORMDiagnostics {
                 IEntityMappings em = emd.getEntityMappings();
                 String name = emd.getSource().toString();
                 String idStr = Integer.toString(id++);
-                byte[] ormXmlData = emd.getEntityMappingsAsXMLBytes();
+                byte[] ormXmlData = readInputStream(emd.getSource().openStream());
                 EncapsulatedData ed = EncapsulatedData.createEncapsulatedData(name, idStr, ormXmlData);
                 edgEntityMappings.putDataItem(ed);
             }
@@ -95,12 +98,13 @@ public class JPAORMDiagnostics {
 
             Tr.debug(tc, "JPAORMDiagnostics Dump", ormDiagText.toString());
         } catch (Throwable t) {
-            // Swallow any exceptions that are caused by the ORM Diagnostic Reporter.  If it bombs,
-            // it must not be permitted to affect application start.
+            // An Exception thrown by the diagnostic tool must not be permitted to interrupt application start.
+            // So log the Exception in FFDC and return.
+            FFDCFilter.processException(t, JPAORMDiagnostics.class.getName() + ".generateJPAORMDiagnostics", "100");
         }
     }
 
-    private static byte[] readPXmlInputStream(InputStream is) throws IOException {
+    private static byte[] readInputStream(InputStream is) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
         int read = -1;
