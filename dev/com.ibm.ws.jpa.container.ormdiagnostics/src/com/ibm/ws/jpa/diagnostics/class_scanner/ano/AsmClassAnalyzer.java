@@ -47,8 +47,7 @@ import com.ibm.ws.jpa.diagnostics.class_scanner.ano.jaxb.classinfo10.ValueType;
 public class AsmClassAnalyzer {
     private final static String JavaLangObject = "java.lang.Object";
 
-    public static final ClassInfoType analyzeClass(String targetClass, byte[] bytecode, InnerOuterResolver ioResolver)
-            throws ClassScannerException {
+    public static final ClassInfoType analyzeClass(String targetClass, byte[] bytecode, InnerOuterResolver ioResolver) throws ClassScannerException {
         if (bytecode == null || bytecode.length == 0) {
             throw new ClassScannerException("Bytecode is required.");
         }
@@ -80,7 +79,7 @@ public class AsmClassAnalyzer {
 
         @Override
         public void visit(int version, int access, String name, String signature, String superName,
-                String[] interfaces) {
+                          String[] interfaces) {
             super.visit(version, access, name, signature, superName, interfaces);
 
             final String adjustedName = AsmHelper.normalizeClassName(name);
@@ -174,13 +173,10 @@ public class AsmClassAnalyzer {
 
         @Override
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
- //           MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-
             MethodsType mt = cit.getMethods();
             if (mt == null) {
                 mt = new MethodsType();
-                cit.setMethods(mt);
-                ;
+                cit.setMethods(mt);;
             }
             final List<MethodInfoType> methodList = mt.getMethod();
             final MethodInfoType mit = new MethodInfoType();
@@ -348,10 +344,10 @@ public class AsmClassAnalyzer {
         }
 
     }
-    
+
     private class CAMethodVisitor extends MethodVisitor {
-        private MethodInfoType mit;
-        
+        private final MethodInfoType mit;
+
         public CAMethodVisitor(MethodInfoType mit) {
             super(Opcodes.ASM6);
             this.mit = mit;
@@ -406,7 +402,7 @@ public class AsmClassAnalyzer {
             eList.add(avt);
             return avt;
         }
-        
+
         private AnnotationValueType newAVT(String name) {
             final AnnotationValueType avt = newAVT();
             avt.setName(name);
@@ -475,16 +471,16 @@ public class AsmClassAnalyzer {
         @Override
         public void visit(String name, Object value) {
             super.visit(name, value);
-                        
+
             final ValueInstanceType vit = AsmObjectValueAnalyzer.processValue(value);
-            
+
             ValueInstanceType arrVit = aet.getValue();
             if (arrVit == null) {
                 arrVit = new ValueInstanceType();
                 arrVit.setType(ValueType.ARRAY);
                 aet.setValue(arrVit);
             }
-   
+
             ArrayInstanceType arit = arrVit.getArray();
             if (arit == null) {
                 arit = new ArrayInstanceType();
@@ -496,14 +492,14 @@ public class AsmClassAnalyzer {
                     arit.setType(ValueType.UNKNOWN);
                 }
             }
-            
+
             final List<ArrayEntryType> aetList = arit.getEntry();
             final int index = aetList.size();
-            
+
             final ArrayEntryType aret = new ArrayEntryType();
             aret.setIndex(index);
             aret.setValue(vit);
-            
+
             arit.getEntry().add(aret);
             arit.setLength(arit.getEntry().size());
         }
@@ -513,14 +509,14 @@ public class AsmClassAnalyzer {
             super.visitEnum(name, desc, value);
 
             ValueInstanceType vit = AsmObjectValueAnalyzer.processEnum(name, desc, value);
-            
+
             ValueInstanceType arrVit = aet.getValue();
             if (arrVit == null) {
                 arrVit = new ValueInstanceType();
                 arrVit.setType(ValueType.ARRAY);
                 aet.setValue(arrVit);
             }
-   
+
             ArrayInstanceType arit = arrVit.getArray();
             if (arit == null) {
                 arit = new ArrayInstanceType();
@@ -532,14 +528,14 @@ public class AsmClassAnalyzer {
                     arit.setType(ValueType.UNKNOWN);
                 }
             }
-            
+
             final List<ArrayEntryType> aetList = arit.getEntry();
             final int index = aetList.size();
-            
+
             final ArrayEntryType aret = new ArrayEntryType();
             aret.setIndex(index);
             aret.setValue(vit);
-            
+
             arit.getEntry().add(aret);
             arit.setLength(arit.getEntry().size());
         }
@@ -572,7 +568,7 @@ public class AsmClassAnalyzer {
 
         @Override
         public AnnotationVisitor visitArray(String name) {
-            return super.visitArray(name);  // TODO
+            return super.visitArray(name); // TODO
         }
 
         @Override

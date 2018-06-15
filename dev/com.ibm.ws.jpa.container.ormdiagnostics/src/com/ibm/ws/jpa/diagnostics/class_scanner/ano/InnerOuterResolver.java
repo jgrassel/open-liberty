@@ -20,34 +20,33 @@ import com.ibm.ws.jpa.diagnostics.class_scanner.ano.jaxb.classinfo10.InnerClasse
 public class InnerOuterResolver {
     private final HashSet<UnresolvedInnerClassReference> innerClassesToResolveSet = new HashSet<UnresolvedInnerClassReference>();
     private final HashSet<UnresolvedOuterClassReference> outerClassesToResolveSet = new HashSet<UnresolvedOuterClassReference>();
-    
+
     public InnerOuterResolver() {
-        
+
     }
-    
+
     public void addUnresolvedInnerClassReference(ClassInfoType outerClass, String unresolvedInnerClass) {
         UnresolvedInnerClassReference uicr = new UnresolvedInnerClassReference(outerClass, unresolvedInnerClass);
         innerClassesToResolveSet.add(uicr);
     }
-    
+
     public void addUnresolvedOuterClassReference(ClassInfoType innerClass, String unresolvedOuterClass) {
         UnresolvedOuterClassReference uocr = new UnresolvedOuterClassReference(innerClass, unresolvedOuterClass);
         outerClassesToResolveSet.add(uocr);
     }
-    
+
     public void resolve(List<ClassInfoType> classList) {
-//        System.out.println("Size of innerClassesToResolveSet = " + innerClassesToResolveSet.size());
         for (UnresolvedInnerClassReference uicr : innerClassesToResolveSet) {
             final ClassInfoType outerClass = uicr.getOuterClass();
             final String innerClassName = uicr.getUnresolvedInnerClass();
-            
+
             for (ClassInfoType cit : classList) {
                 if (cit.getClassName().equals(innerClassName)) {
                     InnerClassesType ict = outerClass.getInnerclasses();
                     if (ict == null || ict.getInnerclass().size() == 0) {
                         continue;
                     }
-                    
+
                     ClassInfoType removeTarget = null;
                     for (ClassInfoType innerCit : ict.getInnerclass()) {
                         if (innerCit.getClassName().equals(innerClassName)) {
@@ -55,31 +54,23 @@ public class InnerOuterResolver {
                             break;
                         }
                     }
-                    
+
                     if (removeTarget == null) {
                         continue;
                     }
                     ict.getInnerclass().remove(removeTarget);
                     ict.getInnerclass().add(cit);
-                    
+
                     break;
                 }
             }
-            
-//            System.out.println(uicr);
-            
         }
-//        System.out.println();
-//        System.out.println("Size of outerClassesToResolveSet = " + outerClassesToResolveSet.size());
-//        for (UnresolvedOuterClassReference uocr : outerClassesToResolveSet) {
-//            System.out.println(uocr);
-//        }
     }
-    
+
     private class UnresolvedInnerClassReference {
-        private ClassInfoType outerClass;
-        private String unresolvedInnerClass;
-        
+        private final ClassInfoType outerClass;
+        private final String unresolvedInnerClass;
+
         public UnresolvedInnerClassReference(ClassInfoType outerClass, String unresolvedInnerClass) {
             super();
             this.outerClass = outerClass;
@@ -97,16 +88,15 @@ public class InnerOuterResolver {
         @Override
         public String toString() {
             return "UnresolvedInnerClassReference [outerClass=" + outerClass.getClassName() + ", unresolvedInnerClass="
-                    + unresolvedInnerClass + "]";
+                   + unresolvedInnerClass + "]";
         }
-        
-        
+
     }
-    
+
     private class UnresolvedOuterClassReference {
-        private ClassInfoType innerClass;
-        private String unresolvedOuterClass;
-        
+        private final ClassInfoType innerClass;
+        private final String unresolvedOuterClass;
+
         public UnresolvedOuterClassReference(ClassInfoType innerClass, String unresolvedOuterClass) {
             super();
             this.innerClass = innerClass;
@@ -124,9 +114,8 @@ public class InnerOuterResolver {
         @Override
         public String toString() {
             return "UnresolvedOuterClassReference [innerClass=" + innerClass.getClassName() + ", unresolvedOuterClass="
-                    + unresolvedOuterClass + "]";
+                   + unresolvedOuterClass + "]";
         }
-        
-        
+
     }
 }

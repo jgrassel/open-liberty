@@ -70,7 +70,6 @@ public class JPAORMDiagnostics {
             EncapsulatedDataGroup edgClassScanner = EncapsulatedDataGroup.createEncapsulatedDataGroup("ClassScanner", "ClassScanner");
             edg.putDataSubGroup(edgClassScanner);
             for (EntityMappingsScannerResults emsr : clsScanResultsList) {
-                System.out.println(emsr);
                 byte[] data = emsr.produceXML();
                 String name = emsr.getTargetArchive().toString();
                 String idStr = Integer.toString(id++);
@@ -89,6 +88,7 @@ public class JPAORMDiagnostics {
                 edgEntityMappings.putDataItem(ed);
             }
 
+            // Analysis complete, emit the results on JPA trace channel
             final StringBuilder ormDiagText = new StringBuilder();
             ormDiagText.append("##### BEGIN JPA ORM Diagnostics\n");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
