@@ -51,6 +51,19 @@ public class AsmObjectValueAnalyzer {
             return vit;
         }
 
+        if ("org.objectweb.asm.Type".equals(value.getClass().getName())) {
+            // This is a reference to a value of Class, ie, Class.class.  We will see this with
+            // references to Entity listeners.
+            org.objectweb.asm.Type type = (org.objectweb.asm.Type) value;
+
+            ObjectInstanceType oit = new ObjectInstanceType();
+            oit.setClassName(type.getClassName());
+            vit.setObject(oit);
+            vit.setType(ValueType.OBJECT);
+
+            return vit;
+        }
+
         final Class<?> cls = value.getClass();
 
         if (cls.isArray()) {
