@@ -159,16 +159,16 @@ public class EncapsulatedData {
         edt.setData(encodeData(baos.toByteArray()));
     }
 
-    private String encodeData(byte[] data) {
+    private String encodeData(final byte[] data) {
         if (data == null) {
             return "";
         }
 
-        byte[] encodedDataBytes = com.ibm.ws.common.internal.encoder.Base64Coder.base64Encode(data);
-        String encodedData = (encodedDataBytes == null) ? "" : new String(encodedDataBytes);
-        String[] lines = encodedData.split("(?<=\\G.{80})");
+        final byte[] encodedDataBytes = com.ibm.ws.common.internal.encoder.Base64Coder.base64Encode(data);
+        final String encodedData = (encodedDataBytes == null) ? "" : new String(encodedDataBytes);
+        final String[] lines = encodedData.split("(?<=\\G.{120})");
 
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append("\n");
         for (String line : lines) {
             sb.append(line).append("\n");

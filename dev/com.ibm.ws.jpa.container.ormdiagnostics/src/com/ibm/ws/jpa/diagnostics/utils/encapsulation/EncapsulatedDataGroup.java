@@ -13,6 +13,7 @@ package com.ibm.ws.jpa.diagnostics.utils.encapsulation;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -230,6 +231,13 @@ public class EncapsulatedDataGroup {
                 propList.remove(p);
             }
         }
+    }
+
+    public void write(PrintWriter pw) throws Exception {
+        JAXBContext jc = JAXBContext.newInstance(EncapsulatedDataGroupType.class);
+        Marshaller marshaller = jc.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+        marshaller.marshal(edgt, pw);
     }
 
     public void writeToString(OutputStream os) throws Exception {

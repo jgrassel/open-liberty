@@ -13,6 +13,7 @@ package com.ibm.ws.jpa.diagnostics;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.List;
 
@@ -37,7 +38,30 @@ public class JPAORMDiagnostics {
                                                          "JPA",
                                                          "com.ibm.ws.jpa.jpa");
 
-    public static void generateJPAORMDiagnostics(PersistenceUnitInfo pui, InputStream pxmlIS) {
+    public static void writeJPAORMDiagnostics(PersistenceUnitInfo pui, InputStream pxmlIS, PrintWriter out) {
+        if (pui == null || out == null) {
+            return;
+        }
+
+        generateJPAORMDiagnostics(pui, pxmlIS, out);
+    }
+
+    public static void writeJPAORMDiagnostics(PersistenceUnitInfo pui, InputStream pxmlIS) {
+        if (pui == null || !(tc.isAnyTracingEnabled() && tc.isDebugEnabled())) {
+            return;
+        }
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final PrintWriter pw = new PrintWriter(baos);
+
+        pw.println("##### BEGIN JPA ORM Diagnostics");
+        generateJPAORMDiagnostics(pui, pxmlIS, pw);
+        pw.println("##### END JPA ORM Diagnostics");
+
+        Tr.debug(tc, "JPAORMDiagnostics Dump", baos.toString());
+    }
+
+    private static void generateJPAORMDiagnostics(PersistenceUnitInfo pui, InputStream pxmlIS, PrintWriter out) {
         try {
             if (pui == null || !(tc.isAnyTracingEnabled() && tc.isDebugEnabled())) {
                 return;
@@ -48,6 +72,33 @@ public class JPAORMDiagnostics {
             final List<EntityMappingsScannerResults> clsScanResultsList = pusr.getClassScannerResults();
             final List<EntityMappingsDefinition> entityMappingDefList = pusr.getEntityMappingsDefinitionsList();
 
+            int totalClassesScanned = 0;
+            if (clsScanResultsList != null && clsScanResultsList.size() > 0) {
+                for (EntityMappingsScannerResults emsr : clsScanResultsList) {
+                    if (emsr.getCit() != null) {
+                        totalClassesScanned += emsr.getCit().getClassInfo().size();
+                    }
+                }
+            }
+            out.println("Total Classes Included in Analysis: " + totalClassesScanned);
+            out.print("Entity Mappings Found ");
+            if (entityMappingDefList != null && entityMappingDefList.size() > 0) {
+                out.print("(" + entityMappingDefList.size() + ") :");
+                boolean first = true;
+                for (EntityMappingsDefinition emd : entityMappingDefList) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        out.print(", ");
+                    }
+                    out.print(emd.getSource());
+                }
+            } else {
+                out.print(": (none)");
+            }
+            out.println();
+
+            // Generate ORM Dump
             EncapsulatedDataGroup edg = EncapsulatedDataGroup.createEncapsulatedDataGroup("ORMDiagnostics", "ORMDiagnostics");
             int id = 0;
 
@@ -88,19 +139,14 @@ public class JPAORMDiagnostics {
                 edgEntityMappings.putDataItem(ed);
             }
 
-            // Analysis complete, emit the results on JPA trace channel
-            final StringBuilder ormDiagText = new StringBuilder();
-            ormDiagText.append("##### BEGIN JPA ORM Diagnostics\n");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            edg.writeToString(baos);
-            ormDiagText.append(baos.toString());
-            ormDiagText.append("\n##### END JPA ORM Diagnostics");
-
-            Tr.debug(tc, "JPAORMDiagnostics Dump", ormDiagText.toString());
+            // Analysis complete, generate the report
+            out.println();
+            out.println("### Persistence Unit, ORM Mapping File, JPA Entity Class Signature Dump ###");
+            edg.write(out);
         } catch (Throwable t) {
             // An Exception thrown by the diagnostic tool must not be permitted to interrupt application start.
             // So log the Exception in FFDC and return.
-            FFDCFilter.processException(t, JPAORMDiagnostics.class.getName() + ".generateJPAORMDiagnostics", "100");
+            FFDCFilter.processException(t, JPAORMDiagnostics.class.getName() + ".generateJPAORMDiagnostics", "120");
         }
     }
 
