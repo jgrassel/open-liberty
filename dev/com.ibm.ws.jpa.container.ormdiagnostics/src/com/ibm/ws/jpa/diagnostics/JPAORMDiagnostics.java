@@ -63,7 +63,7 @@ public class JPAORMDiagnostics {
 
     private static void generateJPAORMDiagnostics(PersistenceUnitInfo pui, InputStream pxmlIS, PrintWriter out) {
         try {
-            if (pui == null || !(tc.isAnyTracingEnabled() && tc.isDebugEnabled())) {
+            if (pui == null) { //  || !(tc.isAnyTracingEnabled() && tc.isDebugEnabled())) {
                 return;
             }
 

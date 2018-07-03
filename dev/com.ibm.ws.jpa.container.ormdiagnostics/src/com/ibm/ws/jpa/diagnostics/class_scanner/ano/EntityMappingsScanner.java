@@ -87,123 +87,7 @@ public final class EntityMappingsScanner {
         }
 
         // Find Inner Classes, merge them into their encapsulating class, and remove them as a standalone ClassInfoType.
-        final HashSet<ClassInfoType> innerClassSet = new HashSet<ClassInfoType>();
-        for (ClassInfoType cit : citSet) {
-            final String className = cit.getClassName();
-            if (className.contains("$")) {
-                innerClassSet.add(cit);
-            }
-        }
-
-        if (innerClassSet.size() > 0) {
-            // Found inner classes
-            final ArrayList<HashSet<ClassInfoType>> innerClassDepthList = new ArrayList<HashSet<ClassInfoType>>();
-
-            // Sort inner classes into increasing nested inner class depth
-            for (ClassInfoType innerCit : innerClassSet) {
-                final String innerClassName = innerCit.getClassName();
-                final String outerClassName = innerClassName.substring(0, innerClassName.lastIndexOf("$"));
-
-                int depth = 1;
-                for (char c : outerClassName.toCharArray()) {
-                    if ('$' == c) {
-                        depth++;
-                    }
-                }
-
-                if (innerClassDepthList.size() < (depth)) {
-                    for (int i = depth - innerClassDepthList.size(); i > 0; i--) {
-                        innerClassDepthList.add(new HashSet<ClassInfoType>());
-                    }
-                }
-
-                HashSet<ClassInfoType> innerClassDepthSet = innerClassDepthList.get(depth - 1);
-                innerClassDepthSet.add(innerCit);
-            }
-
-            if (innerClassDepthList.size() > 1) {
-                // Collapse Inner Classes to the top inner class level
-                for (int index = innerClassDepthList.size() - 1; index >= 1; index--) {
-                    HashSet<ClassInfoType> innerClassesAtDepth = innerClassDepthList.get(index);
-                    HashSet<ClassInfoType> innerClassesAtHigherDepth = innerClassDepthList.get(index - 1);
-
-                    for (ClassInfoType cit : innerClassesAtDepth) {
-                        final String innerClassName = cit.getClassName();
-                        final String outerClassName = innerClassName.substring(0, innerClassName.lastIndexOf("$"));
-
-                        ClassInfoType higherInnerClass = null;
-                        for (ClassInfoType uIC : innerClassesAtHigherDepth) {
-                            if (uIC.getName().equals(outerClassName)) {
-                                higherInnerClass = uIC;
-                                break;
-                            }
-                        }
-
-                        if (higherInnerClass == null) {
-                            // Didn't find the inner class containing its nested inner class.  That's a problem.
-                            // TODO: <spaceballs>Do Something!</spaceballs>
-                        } else {
-                            // Now we need to walk the higher level inner class's inner classes list until we find the
-                            // placeholder for he current inner class
-                            InnerClassesType ict = higherInnerClass.getInnerclasses();
-                            if (ict == null) {
-                                ict = new InnerClassesType();
-                                higherInnerClass.setInnerclasses(ict);
-                            }
-
-                            final List<ClassInfoType> innerClassList = ict.getInnerclass();
-                            ClassInfoType replaceThis = null;
-                            for (ClassInfoType iclCit : innerClassList) {
-                                if (iclCit.getName().equals(innerClassName)) {
-                                    replaceThis = iclCit;
-                                    break;
-                                }
-                            }
-
-                            if (replaceThis == null) {
-                                innerClassList.remove(replaceThis);
-                            }
-                            innerClassList.add(cit);
-                        }
-                    }
-                }
-            }
-
-            // We have collapsed all of the nested inner classes, now to associate first-level inner classes with their
-            // outer class that is a regular class
-            HashSet<ClassInfoType> innerClassesAtDepth = innerClassDepthList.get(0);
-            for (ClassInfoType innerCit : innerClassesAtDepth) {
-                final String innerClassName = innerCit.getClassName();
-                final String outerClassName = innerClassName.substring(0, innerClassName.lastIndexOf("$"));
-
-                for (ClassInfoType cit : citSet) {
-                    if (cit.getName().equals(outerClassName)) {
-                        InnerClassesType ict = cit.getInnerclasses();
-                        if (ict == null) {
-                            ict = new InnerClassesType();
-                            cit.setInnerclasses(ict);
-                        }
-
-                        final List<ClassInfoType> innerClassList = ict.getInnerclass();
-                        ClassInfoType replaceThis = null;
-                        for (ClassInfoType iclCit : innerClassList) {
-                            if (iclCit.getName().equals(innerClassName)) {
-                                replaceThis = iclCit;
-                                break;
-                            }
-                        }
-
-                        if (replaceThis == null) {
-                            innerClassList.remove(replaceThis);
-                        }
-                        innerClassList.add(innerCit);
-                    }
-                }
-            }
-
-            // Remove the inner classes from the list of outer classes.
-            citSet.removeAll(innerClassSet);
-        }
+        processInnerClasses(citSet);
 
         // // Scan the classes found in the referenced archive
         // final Set<ClassInfoType> scannedClasses = new HashSet<ClassInfoType>();
@@ -224,6 +108,129 @@ public final class EntityMappingsScanner {
         ioResolver.resolve(citList);
 
         return cit;
+    }
+
+    private void processInnerClasses(final Set<ClassInfoType> citSet) throws ClassScannerException {
+        final HashSet<ClassInfoType> innerClassSet = new HashSet<ClassInfoType>();
+        for (ClassInfoType cit : citSet) {
+            final String className = cit.getClassName();
+            if (className.contains("$")) {
+                innerClassSet.add(cit);
+            }
+        }
+
+        if (innerClassSet.size() == 0) {
+            // No inner classes to process.
+            return;
+        }
+
+        // Found inner classes, (index + 1) identifies the inner class nested depth (index=0 for topmost inner class)
+        final ArrayList<HashSet<ClassInfoType>> innerClassDepthList = new ArrayList<HashSet<ClassInfoType>>();
+
+        // Sort inner classes into increasing nested inner class depth
+        for (ClassInfoType innerCit : innerClassSet) {
+            final String innerClassName = innerCit.getClassName();
+            final String outerClassName = innerClassName.substring(0, innerClassName.lastIndexOf("$"));
+
+            int depth = 1;
+            for (char c : outerClassName.toCharArray()) {
+                if ('$' == c) {
+                    depth++;
+                }
+            }
+
+            if (innerClassDepthList.size() < (depth)) {
+                for (int i = depth - innerClassDepthList.size(); i > 0; i--) {
+                    innerClassDepthList.add(new HashSet<ClassInfoType>());
+                }
+            }
+
+            HashSet<ClassInfoType> innerClassDepthSet = innerClassDepthList.get(depth - 1);
+            innerClassDepthSet.add(innerCit);
+        }
+
+        if (innerClassDepthList.size() > 1) {
+            // Collapse Inner Classes to the top inner class level
+            for (int index = innerClassDepthList.size() - 1; index >= 1; index--) {
+                HashSet<ClassInfoType> innerClassesAtDepth = innerClassDepthList.get(index);
+                HashSet<ClassInfoType> innerClassesAtHigherDepth = innerClassDepthList.get(index - 1);
+
+                for (ClassInfoType cit : innerClassesAtDepth) {
+                    final String innerClassName = cit.getClassName();
+                    final String outerClassName = innerClassName.substring(0, innerClassName.lastIndexOf("$"));
+
+                    ClassInfoType higherInnerClass = null;
+                    for (ClassInfoType uIC : innerClassesAtHigherDepth) {
+                        if (uIC.getClassName().equals(outerClassName)) {
+                            higherInnerClass = uIC;
+                            break;
+                        }
+                    }
+
+                    if (higherInnerClass == null) {
+                        // Didn't find the inner class containing its nested inner class.  That's a problem.
+                        // TODO: <spaceballs>Do Something!</spaceballs>
+                    } else {
+                        // Now we need to walk the higher level inner class's inner classes list until we find the
+                        // placeholder for he current inner class
+                        InnerClassesType ict = higherInnerClass.getInnerclasses();
+                        if (ict == null) {
+                            ict = new InnerClassesType();
+                            higherInnerClass.setInnerclasses(ict);
+                        }
+
+                        final List<ClassInfoType> innerClassList = ict.getInnerclass();
+                        ClassInfoType replaceThis = null;
+                        for (ClassInfoType iclCit : innerClassList) {
+                            if (iclCit.getClassName().equals(innerClassName)) {
+                                replaceThis = iclCit;
+                                break;
+                            }
+                        }
+
+                        if (replaceThis == null) {
+                            innerClassList.remove(replaceThis);
+                        }
+                        innerClassList.add(cit);
+                    }
+                }
+            }
+        }
+
+        // We have collapsed all of the nested inner classes, now to associate first-level inner classes with their
+        // outer class that is a regular class
+        HashSet<ClassInfoType> innerClassesAtDepth = innerClassDepthList.get(0);
+        for (ClassInfoType innerCit : innerClassesAtDepth) {
+            final String innerClassName = innerCit.getClassName();
+            final String outerClassName = innerClassName.substring(0, innerClassName.lastIndexOf("$"));
+
+            for (ClassInfoType cit : citSet) {
+                if (cit.getClassName().equals(outerClassName)) {
+                    InnerClassesType ict = cit.getInnerclasses();
+                    if (ict == null) {
+                        ict = new InnerClassesType();
+                        cit.setInnerclasses(ict);
+                    }
+
+                    final List<ClassInfoType> innerClassList = ict.getInnerclass();
+                    ClassInfoType replaceThis = null;
+                    for (ClassInfoType iclCit : innerClassList) {
+                        if (iclCit.getClassName().equals(innerClassName)) {
+                            replaceThis = iclCit;
+                            break;
+                        }
+                    }
+
+                    if (replaceThis != null) {
+                        innerClassList.remove(replaceThis);
+                    }
+                    innerClassList.add(innerCit);
+                }
+            }
+        }
+
+        // Remove the inner classes from the list of outer classes.
+        citSet.removeAll(innerClassSet);
     }
 
     private Set<ClassInfoType> processExplodedJarFormat(Path path) throws ClassScannerException {
