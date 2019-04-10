@@ -9,4 +9,32 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 
-addRequiredLibraries.dependsOn addDerby
+configurations {
+  derbyNetwork
+  derbyClient
+}
+
+dependencies {
+  derbyNetwork 'org.apache.derby:derbynet:10.11.1.1'
+  derbyClient  'org.apache.derby:derbyclient:10.11.1.1'
+}
+
+task addDerbyNetwork(type: Copy) {
+  shouldRunAfter jar
+  from configurations.derbyNetwork
+  into new File(autoFvtDir, 'publish/shared/resources/derby')
+  rename 'derbynet-.*.jar', 'derbynet.jar'
+}
+
+task addDerbyClient(type: Copy) {
+  shouldRunAfter jar
+  from configurations.derbyClient
+  into new File(autoFvtDir, 'publish/shared/resources/derby')
+  rename 'derbyclient-.*.jar', 'derbyclient.jar'
+}
+
+addRequiredLibraries {
+  dependsOn addDerby
+  dependsOn addDerbyNetwork
+  dependsOn addDerbyClient
+}
